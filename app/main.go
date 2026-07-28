@@ -51,19 +51,19 @@ func main() {
 			panic(err)
 		}
 
-		// var pageType string
-		// switch pageHeader[0] {
-		// case 0x02:
-		// 	pageType = "interior index b-tree"
-		// case 0x05:
-		// 	pageType = "interior table b-tree"
-		// case 0x0a:
-		// 	pageType = "leaf index b-tree"
-		// case 0x0d:
-		// 	pageType = "leaf table b-tree"
-		// default:
-		// 	pageType = "error"
-		// }
+		var pageType string
+		switch pageHeader[0] {
+		case 0x02:
+			pageType = "interior index b-tree"
+		case 0x05:
+			pageType = "interior table b-tree"
+		case 0x0a:
+			pageType = "leaf index b-tree"
+		case 0x0d:
+			pageType = "leaf table b-tree"
+		default:
+			pageType = "error"
+		}
 
 		var startOfFirstFreeblock uint16
 		if err := binary.Read(bytes.NewReader(pageHeader[1:3]), binary.BigEndian, &startOfFirstFreeblock); err != nil {
@@ -87,11 +87,10 @@ func main() {
 
 		fmt.Printf("database page size: %v\n", pageSize)
 		fmt.Printf("number of tables: %v\n", numCells)
-		// fmt.Printf("typeof page: %v\n", pageType)
-		// fmt.Printf("start of first freeblock on the page: 0x%x\n", startOfFirstFreeblock)
-		// fmt.Printf("number of cells on the page: %v\n", numCells)
-		// fmt.Printf("start of cell content area: %v\n", startOfCellContentArea)
-		// fmt.Printf("fragmented free bytes: %v\n", fragmentedFreeBytes)
+		fmt.Fprintf(os.Stderr, "typeof page: %v\n", pageType)
+		fmt.Fprintf(os.Stderr, "start of first freeblock on the page: 0x%x\n", startOfFirstFreeblock)
+		fmt.Fprintf(os.Stderr, "start of cell content area: %v\n", startOfCellContentArea)
+		fmt.Fprintf(os.Stderr, "fragmented free bytes: %v\n", fragmentedFreeBytes)
 	default:
 		fmt.Println("Unknown command", command)
 		os.Exit(1)
