@@ -35,27 +35,55 @@ Offset	Size	Description
 
 type DatabaseHeader struct {
 	HeaderString               string // The header string: "SQLite format 3\000"
-	PageSize                   int16  // The database page size in bytes. Must be a power of two between 512 and 32768 inclusive, or the value 1 representing a page size of 65536.
+	PageSize                   uint16 // The database page size in bytes. Must be a power of two between 512 and 32768 inclusive, or the value 1 representing a page size of 65536.
 	ReadVersion                byte   // File format write version. 1 for legacy; 2 for WAL.
 	WriteVersion               byte   // File format read version. 1 for legacy; 2 for WAL.
 	ReservedBytes              byte   // Bytes of unused "reserved" space at the end of each page. Usually 0.
 	MaxEmbeddedPayloadFraction byte   // Maximum embedded payload fraction. Must be 64.
 	MinEmbeddedPayloadFraction byte   // Minimum embedded payload fraction. Must be 32.
 	LeafPayloadFraction        byte   // Leaf payload fraction. Must be 32.
-	FileChangeCounter          int32  // File change counter.
-	SizeOfDatabaseInPages      int32  // Size of the database file in pages. The "in-header database size".
-	FirstFreelistTrunkPage     int32  // Page number of the first freelist trunk page.
-	TotalFreelistPages         int32  // Total number of freelist pages.
-	SchemaCookie               int32  // The schema cookie.
-	SchemaFormatNumber         int32  // The schema format number. Supported schema formats are 1, 2, 3, and 4.
-	PageCacheSize              int32  // Default page cache size.
-	LargestRootBTree           int32  // The page number of the largest root b-tree page when in auto-vacuum or incremental-vacuum modes, or zero otherwise.
-	TextEncoding               int32  // The database text encoding. A value of 1 means UTF-8. A value of 2 means UTF-16le. A value of 3 means UTF-16be.
-	UserVersino                int32  // The "user version" as read and set by the user_version pragma.
-	IncrementalVacuumMode      int32  // True (non-zero) for incremental-vacuum mode. False (zero) otherwise.
-	ApplicationID              int32  // The "Application ID" set by PRAGMA application_id.
-	VersionValidFor            int32  // The version-valid-for number.
-	SqliteVersionNumber        int32  // SQLITE_VERSION_NUMBER
+	FileChangeCounter          uint32 // File change counter.
+	SizeOfDatabaseInPages      uint32 // Size of the database file in pages. The "in-header database size".
+	FirstFreelistTrunkPage     uint32 // Page number of the first freelist trunk page.
+	TotalFreelistPages         uint32 // Total number of freelist pages.
+	SchemaCookie               uint32 // The schema cookie.
+	SchemaFormatNumber         uint32 // The schema format number. Supported schema formats are 1, 2, 3, and 4.
+	PageCacheSize              uint32 // Default page cache size.
+	LargestRootBTree           uint32 // The page number of the largest root b-tree page when in auto-vacuum or incremental-vacuum modes, or zero otherwise.
+	TextEncoding               uint32 // The database text encoding. A value of 1 means UTF-8. A value of 2 means UTF-16le. A value of 3 means UTF-16be.
+	UserVersion                uint32 // The "user version" as read and set by the user_version pragma.
+	IncrementalVacuumMode      uint32 // True (non-zero) for incremental-vacuum mode. False (zero) otherwise.
+	ApplicationID              uint32 // The "Application ID" set by PRAGMA application_id.
+	VersionValidFor            uint32 // The version-valid-for number.
+	SqliteVersionNumber        uint32 // SQLITE_VERSION_NUMBER
+}
+
+func (d *DatabaseHeader) Dump() map[string]any {
+	response := make(map[string]any, 0)
+	response["HeaderString"] = d.HeaderString
+	response["PageSize"] = d.PageSize
+	response["ReadVersion"] = d.ReadVersion
+	response["WriteVersion"] = d.WriteVersion
+	response["ReservedBytes"] = d.ReservedBytes
+	response["MaxEmbeddedPayloadFraction"] = d.MaxEmbeddedPayloadFraction
+	response["MinEmbeddedPayloadFraction"] = d.MinEmbeddedPayloadFraction
+	response["LeafPayloadFraction"] = d.LeafPayloadFraction
+	response["FileChangeCounter"] = d.FileChangeCounter
+	response["SizeOfDatabaseInPages"] = d.SizeOfDatabaseInPages
+	response["FirstFreelistTrunkPage"] = d.FirstFreelistTrunkPage
+	response["TotalFreelistPages"] = d.TotalFreelistPages
+	response["SchemaCookie"] = d.SchemaCookie
+	response["SchemaFormatNumber"] = d.SchemaFormatNumber
+	response["PageCacheSize"] = d.PageCacheSize
+	response["LargestRootBTree"] = d.LargestRootBTree
+	response["TextEncoding"] = d.TextEncoding
+	response["UserVersion"] = d.UserVersion
+	response["IncrementalVacuumMode"] = d.IncrementalVacuumMode
+	response["ApplicationID"] = d.ApplicationID
+	response["VersionValidFor"] = d.VersionValidFor
+	response["SqliteVersionNumber"] = d.SqliteVersionNumber
+
+	return response
 }
 
 func (d *DatabaseHeader) Fill(header []byte) {
@@ -108,7 +136,7 @@ func (d *DatabaseHeader) Fill(header []byte) {
 		log.Fatal(err, "d.TextEncoding")
 	}
 
-	if err := binary.Read(bytes.NewReader(header[60:64]), binary.BigEndian, &d.UserVersino); err != nil {
+	if err := binary.Read(bytes.NewReader(header[60:64]), binary.BigEndian, &d.UserVersion); err != nil {
 		log.Fatal(err, "d.UserVersino")
 	}
 
