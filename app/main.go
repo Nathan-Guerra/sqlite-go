@@ -51,6 +51,8 @@ func varint(b []byte) (int64, int) {
 	return value, length
 }
 
+const DatabaseHeaderSize = 100
+
 // Usage: your_program.sh sample.db .dbinfo
 func main() {
 	databaseFilePath := os.Args[1]
@@ -63,7 +65,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		dbHeaderBuffer := make([]byte, 100)
+		dbHeaderBuffer := make([]byte, DatabaseHeaderSize)
 		n, err := databaseFile.Read(dbHeaderBuffer)
 		if err != nil {
 			log.Fatal(err, n)
@@ -73,7 +75,7 @@ func main() {
 		dbHeader.Fill(dbHeaderBuffer)
 
 		pageHeaderBuffer := make([]byte, 12)
-		n, err = databaseFile.ReadAt(pageHeaderBuffer, 100)
+		n, err = databaseFile.ReadAt(pageHeaderBuffer, DatabaseHeaderSize)
 		if err != nil {
 			log.Fatal(err, n)
 		}
@@ -89,44 +91,56 @@ func main() {
 			log.Fatal(err)
 		}
 
-		dbHeaderBuffer := make([]byte, 100)
+		dbHeaderBuffer := make([]byte, DatabaseHeaderSize)
 		n, err := databaseFile.Read(dbHeaderBuffer)
 		if err != nil {
 			log.Fatal(err, n)
 		}
 
-		dbHeader := DatabaseHeader{}
+		dbHeader := &DatabaseHeader{}
 		dbHeader.Fill(dbHeaderBuffer)
 
 		pageHeaderBuffer := make([]byte, 12)
-		n, err = databaseFile.ReadAt(pageHeaderBuffer, 100)
+		n, err = databaseFile.ReadAt(pageHeaderBuffer, DatabaseHeaderSize)
 		if err != nil {
 			log.Fatal(err, n)
 		}
 
-		pageHeader := PageHeader{}
+		pageHeader := &PageHeader{}
 		pageHeader.Fill(pageHeaderBuffer)
 
-		cellPos := make([]uint16, pageHeader.NumberOfCells)
-		buff := make([]byte, pageHeader.NumberOfCells*2)
-		_, err = databaseFile.ReadAt(buff, int64(100+pageHeader.Size))
+		// The cell pointer array of a b-tree page immediately follows
+		// the b-tree page header. Let K be the number of cells on the btree.
+		// The cell pointer array consists of K 2-byte integer offsets to the
+		// cell contents. The cell pointers are arranged in key order with
+		// left-most cell (the cell with the smallest key) first and the
+		// right-most cell (the cell with the largest key) last.
+		cellPositions := make([]uint16, pageHeader.NumberOfCells)
+		cellPositionBuffer := make([]byte, pageHeader.NumberOfCells*2)
+		_, err = databaseFile.ReadAt(cellPositionBuffer, int64(DatabaseHeaderSize+pageHeader.Size))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		for i := 0; i < len(buff); i += 2 {
-			if err = binary.Read(bytes.NewReader(buff[i:i+2]), binary.BigEndian, &cellPos[i/2]); err != nil {
+		fmt.Fprintf(os.Stderr, "dbHeader\t: %#v\n", dbHeader.Dump())
+		fmt.Fprintf(os.Stderr, "pageHeader\t: %#v\n", pageHeader.Dump())
+
+		for i := 0; i < len(cellPositionBuffer); i += 2 {
+			if err = binary.Read(bytes.NewReader(cellPositionBuffer[i:i+2]), binary.BigEndian, &cellPositions[i/2]); err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		fmt.Fprintf(os.Stderr, "%#v\n", cellPos)
-
-		// tableContent := make([]byte, pageHeader.Size-byte(pageHeader.StartOfCellContentArea))
-		// _, err = databaseFile.ReadAt(tableContent, int64(cellsOffset))
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
+		var endOfContent uint16 = dbHeader.PageSize - uint16(dbHeader.ReservedBytes)
+		for _, pos := range cellPositions {
+			cellContentBuffer := make([]byte, endOfContent-pos)
+			_, err = databaseFile.ReadAt(cellContentBuffer, int64(pos))
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintf(os.Stderr, "cellContent: %s\n", cellContentBuffer)
+			endOfContent = pos
+		}
 
 		// totOffset := 0
 		// recordSize, n := varint(tableContent)

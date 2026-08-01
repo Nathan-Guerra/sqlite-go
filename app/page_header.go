@@ -32,6 +32,18 @@ type PageHeader struct {
 	Size                   byte
 }
 
+func (p *PageHeader) Dump() map[string]any {
+	response := make(map[string]any, 7)
+	response["PageType"] = p.PageType
+	response["FirstFreeblock"] = p.FirstFreeblock
+	response["NumberOfCells"] = p.NumberOfCells
+	response["StartOfCellContentArea"] = p.StartOfCellContentArea
+	response["FragmentedFreeBytes"] = p.FragmentedFreeBytes
+	response["RightmostPointer"] = p.RightmostPointer
+	response["Size"] = p.Size
+	return response
+}
+
 func (p *PageHeader) Fill(header []byte) {
 	p.Size = 8
 	p.PageType = header[0]
