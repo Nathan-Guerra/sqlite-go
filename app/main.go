@@ -138,7 +138,10 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Fprintf(os.Stderr, "cellContent: %s\n", cellContentBuffer)
+			fmt.Fprintf(os.Stderr, "\n\n-----\n")
+			fmt.Fprintf(os.Stderr, "cellContent: %s\n\n", cellContentBuffer)
+			fmt.Fprintf(os.Stderr, "cellContent: %v\n", cellContentBuffer)
+
 			endOfContent = pos
 		}
 
