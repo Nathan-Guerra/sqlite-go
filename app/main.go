@@ -10,46 +10,65 @@ import (
 	// "github.com/xwb1989/sqlparser"
 )
 
-func varint(b []byte) (int64, int) {
-	// from sqlite documentation
-	//A variable-length integer or "varint" is a static Huffman encoding
-	// of 64-bit twos-complement integers that uses less space for small
-	// positive values. A varint is between 1 and 9 bytes in length.
-	// The varint consists of either zero or more bytes which have the
-	// high-order bit set followed by a single byte with the high-order
-	// bit clear, or nine bytes, whichever is shorter. The lower seven
-	// bits of each of the first eight bytes and all 8 bits of the ninth
-	// byte are used to reconstruct the 64-bit twos-complement integer.
-	// Varints are big-endian: bits taken from the earlier byte of the
-	// varint are more significant than bits taken from the later bytes.
-	var highOrderBit byte = 0x80
-	length := 0
-	for _, v := range b {
-		if length == 9 {
-			break
-		}
-		length++
-		if v&highOrderBit == 0 {
-			break
-		}
-	}
+// from sqlite documentation
+//A variable-length integer or "varint" is a static Huffman encoding
+// of 64-bit twos-complement integers that uses less space for small
+// positive values. A varint is between 1 and 9 bytes in length.
+// The varint consists of either zero or more bytes which have the
+// high-order bit set followed by a single byte with the high-order
+// bit clear, or nine bytes, whichever is shorter. The lower seven
+// bits of each of the first eight bytes and all 8 bits of the ninth
+// byte are used to reconstruct the 64-bit twos-complement integer.
+// Varints are big-endian: bits taken from the earlier byte of the
+// varint are more significant than bits taken from the later bytes.
 
-	var value int64 = 0x0
-	var mask byte = 0x7f
-	for i, v := range b[:length] {
-		if v&highOrderBit != 0 && i < 8 {
-			value = (value << 7) | int64(v&mask)
-			// fmt.Fprintf(os.Stderr, "value = (value << 7) | int64(v&mask) %b %b\n", value, v&mask)
-		} else {
-			value = (value << 8) | int64(v)
-			// fmt.Fprintf(os.Stderr, "value = (value << 8) | int64(v) %b %b\n", value, v)
-
-			break
+// source: https://github.com/go-sqlite/sqlite3/blob/53dd8e640ee7dd6005bd7199eed0c470ab43a16e/utils.go#L30-L45
+func varint(data []byte) (int64, int) {
+	var val uint64
+	for i := range 8 {
+		if i > len(data)-1 {
+			return 0, 0
+		}
+		val = (val << 7) | uint64(data[i]&0x7f)
+		if data[i] < 0x80 {
+			return int64(val), i + 1
 		}
 	}
-
-	return value, length
+	if len(data) < 9 {
+		return 0, 0
+	}
+	return int64((val << 8) | uint64(data[8])), 9
 }
+
+// func varint(b []byte) (int64, int) {
+// 	var highOrderBit byte = 0x80
+// 	length := 0
+// 	for _, v := range b {
+// 		if length == 9 {
+// 			break
+// 		}
+// 		length++
+// 		if v&highOrderBit == 0 {
+// 			break
+// 		}
+// 	}
+//
+// 	var value int64 = 0x0
+// 	var mask byte = 0x7f
+// 	for i, v := range b[:length] {
+// 		if v&highOrderBit != 0 && i < 8 {
+// 			value = (value << 7) | int64(v&mask)
+// 			fmt.Fprintf(os.Stderr, "value = (value << 7) | int64(v&mask) %b %b\n", value, v&mask)
+// 		} else {
+// 			value = (value << 8) | int64(v)
+// 			fmt.Fprintf(os.Stderr, "value = (value << 8) | int64(v) %b %b\n", value, v)
+//
+// 			break
+// 		}
+// 	}
+//
+// 	return value, length
+// }
 
 const DatabaseHeaderSize = 100
 
@@ -139,8 +158,11 @@ func main() {
 				log.Fatal(err)
 			}
 			fmt.Fprintf(os.Stderr, "\n\n-----\n")
-			fmt.Fprintf(os.Stderr, "cellContent: %s\n\n", cellContentBuffer)
-			fmt.Fprintf(os.Stderr, "cellContent: %v\n", cellContentBuffer)
+			// fmt.Fprintf(os.Stderr, "cellContent: %s\n", cellContentBuffer)
+			// fmt.Fprintf(os.Stderr, "cellContent: %v\n", cellContentBuffer)
+
+			record := Record{}
+			record.Fill(cellContentBuffer)
 
 			endOfContent = pos
 		}
