@@ -41,36 +41,6 @@ func varint(data []byte) (int64, int) {
 	return int64((val << 8) | uint64(data[8])), 9
 }
 
-// func varint(b []byte) (int64, int) {
-// 	var highOrderBit byte = 0x80
-// 	length := 0
-// 	for _, v := range b {
-// 		if length == 9 {
-// 			break
-// 		}
-// 		length++
-// 		if v&highOrderBit == 0 {
-// 			break
-// 		}
-// 	}
-//
-// 	var value int64 = 0x0
-// 	var mask byte = 0x7f
-// 	for i, v := range b[:length] {
-// 		if v&highOrderBit != 0 && i < 8 {
-// 			value = (value << 7) | int64(v&mask)
-// 			fmt.Fprintf(os.Stderr, "value = (value << 7) | int64(v&mask) %b %b\n", value, v&mask)
-// 		} else {
-// 			value = (value << 8) | int64(v)
-// 			fmt.Fprintf(os.Stderr, "value = (value << 8) | int64(v) %b %b\n", value, v)
-//
-// 			break
-// 		}
-// 	}
-//
-// 	return value, length
-// }
-
 const DatabaseHeaderSize = 100
 
 // Usage: your_program.sh sample.db .dbinfo

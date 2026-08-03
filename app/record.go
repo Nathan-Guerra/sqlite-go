@@ -116,6 +116,4 @@ func (r *Record) Fill(b []byte) {
 			offset += int((st - 13) / 2)
 		}
 	}
-
-	// body.Dump()
 }
