@@ -1,13 +1,5 @@
 [![progress-banner](https://backend.codecrafters.io/progress/sqlite/3ee4e69a-746c-4e9f-8774-8110424498c1)](https://app.codecrafters.io/users/Nathan-Guerra?r=2qF)
 
-In this challenge, you'll build a barebones SQLite implementation that supports
-basic SQL queries like `SELECT`. Along the way we'll learn about
-[SQLite's file format](https://www.sqlite.org/fileformat.html), how indexed data
-is
-[stored in B-trees](https://jvns.ca/blog/2014/10/02/how-does-sqlite-work-part-2-btrees/)
-and more.
-
-
 This is my attempt on implementing the sqlite cli from scratch based on codecrafters's
 ["Build Your Own SQLite" Challenge](https://codecrafters.io/challenges/sqlite).
 
