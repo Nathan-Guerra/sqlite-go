@@ -26,7 +26,7 @@ func (h *Header) FillSerialTypes(b []byte) int {
 }
 
 type Body struct {
-	Payload map[string]any
+	Payload []any
 }
 
 func (b *Body) Dump() {
@@ -52,70 +52,70 @@ func (r *Record) Fill(b []byte) {
 	offset += n
 
 	body := &Body{}
-	body.Payload = make(map[string]any, 0)
+	body.Payload = make([]any, 0)
 	r.Header = header
 	r.Body = body
 
-	for i, st := range header.SerialTypes {
+	for _, st := range header.SerialTypes {
 		if st == 0 {
-			body.Payload[fmt.Sprintf("st-%v", i)] = "nil"
+			body.Payload = append(body.Payload, "nil")
 		} else if st == 0x1 {
-			body.Payload[fmt.Sprintf("st-%v", i)] = int8(b[offset])
+			body.Payload = append(body.Payload, int8(b[offset]))
 			offset += 1
 		} else if st == 0x2 {
 			var i int16
 			if err := binary.Read(bytes.NewReader(b[offset:offset+2]), binary.BigEndian, &i); err != nil {
 				log.Fatal(err, "0x2")
 			}
-			body.Payload[fmt.Sprintf("st-%v", i)] = i
+			body.Payload = append(body.Payload, i)
 			offset += 2
 		} else if st == 0x3 {
 			var i int32
 			if err := binary.Read(bytes.NewReader(append([]byte{0}, b[offset:offset+3]...)), binary.BigEndian, &i); err != nil {
 				log.Fatal(err, "0x3")
 			}
-			body.Payload[fmt.Sprintf("st-%v", i)] = i
+			body.Payload = append(body.Payload, i)
 			offset += 3
 		} else if st == 0x4 {
 			var i int32
 			if err := binary.Read(bytes.NewReader(b[offset:offset+4]), binary.BigEndian, &i); err != nil {
 				log.Fatal(err, "0x4")
 			}
-			body.Payload[fmt.Sprintf("st-%v", i)] = i
+			body.Payload = append(body.Payload, i)
 			offset += 4
 		} else if st == 0x5 {
 			var i int64
 			if err := binary.Read(bytes.NewReader(append([]byte{0, 0}, b[offset:offset+6]...)), binary.BigEndian, &i); err != nil {
 				log.Fatal(err, "0x5")
 			}
-			body.Payload[fmt.Sprintf("st-%v", i)] = i
+			body.Payload = append(body.Payload, i)
 			offset += 6
 		} else if st == 0x6 {
 			var i int64
 			if err := binary.Read(bytes.NewReader(b[offset:offset+8]), binary.BigEndian, &i); err != nil {
 				log.Fatal(err, "0x6")
 			}
-			body.Payload[fmt.Sprintf("st-%v", i)] = i
+			body.Payload = append(body.Payload, i)
 			offset += 8
 		} else if st == 0x7 {
 			var i float64
 			if err := binary.Read(bytes.NewReader(b[offset:offset+8]), binary.BigEndian, &i); err != nil {
 				log.Fatal(err, "0x7")
 			}
-			body.Payload[fmt.Sprintf("st-%v", i)] = i
+			body.Payload = append(body.Payload, i)
 			offset += 8
 		} else if st == 0x8 {
-			body.Payload[fmt.Sprintf("st-%v", i)] = int8(0)
+			body.Payload = append(body.Payload, int8(0))
 		} else if st == 0x9 {
-			body.Payload[fmt.Sprintf("st-%v", i)] = int8(1)
+			body.Payload = append(body.Payload, int8(1))
 		} else if st >= 12 && st%2 == 0 {
-			body.Payload[fmt.Sprintf("st-%v", i)] = string(b[offset : offset+(int((st-12)/2))])
+			body.Payload = append(body.Payload, string(b[offset:offset+(int((st-12)/2))]))
 			offset += int((st - 12) / 2)
 		} else if st >= 13 && st%2 == 1 {
-			body.Payload[fmt.Sprintf("st-%v", i)] = string(b[offset : offset+(int((st-13)/2))])
+			body.Payload = append(body.Payload, string(b[offset:offset+(int((st-13)/2))]))
 			offset += int((st - 13) / 2)
 		}
 	}
 
-	body.Dump()
+	// body.Dump()
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	// Available if you need it!
 	// "github.com/xwb1989/sqlparser"
 )
@@ -141,8 +142,8 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Fprintf(os.Stderr, "dbHeader\t: %#v\n", dbHeader.Dump())
-		fmt.Fprintf(os.Stderr, "pageHeader\t: %#v\n", pageHeader.Dump())
+		// fmt.Fprintf(os.Stderr, "dbHeader\t: %#v\n", dbHeader.Dump())
+		// fmt.Fprintf(os.Stderr, "pageHeader\t: %#v\n", pageHeader.Dump())
 
 		for i := 0; i < len(cellPositionBuffer); i += 2 {
 			if err = binary.Read(bytes.NewReader(cellPositionBuffer[i:i+2]), binary.BigEndian, &cellPositions[i/2]); err != nil {
@@ -151,87 +152,30 @@ func main() {
 		}
 
 		var endOfContent uint16 = dbHeader.PageSize - uint16(dbHeader.ReservedBytes)
+		var records []Record
 		for _, pos := range cellPositions {
 			cellContentBuffer := make([]byte, endOfContent-pos)
 			_, err = databaseFile.ReadAt(cellContentBuffer, int64(pos))
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Fprintf(os.Stderr, "\n\n-----\n")
-			// fmt.Fprintf(os.Stderr, "cellContent: %s\n", cellContentBuffer)
-			// fmt.Fprintf(os.Stderr, "cellContent: %v\n", cellContentBuffer)
-
 			record := Record{}
 			record.Fill(cellContentBuffer)
+			records = append(records, record)
 
 			endOfContent = pos
 		}
 
-		// totOffset := 0
-		// recordSize, n := varint(tableContent)
-		// totOffset += n
-
-		// rowID, n := varint(tableContent[totOffset:])
-		// totOffset += n
-
-		// headerSize, n := varint(tableContent[totOffset:])
-		// columns := make([]int64, 0)
-		// header := tableContent[totOffset+n : totOffset+int(headerSize)]
-
-		// i := 0
-		// for i < len(header) {
-		// 	serialType, o := varint(header[i:])
-		// 	columns = append(columns, serialType)
-		// 	i += o
-		// }
-		// totOffset += int(headerSize)
-
-		// fmt.Fprintf(os.Stderr, "record size: %d\n", recordSize)
-		// fmt.Fprintf(os.Stderr, "rowID: %d\n", rowID)
-		// fmt.Fprintf(os.Stderr, "header size: %d\n", headerSize)
-		// fmt.Fprintf(os.Stderr, "columns: %v\n", columns)
-
-		// body := tableContent[totOffset:]
-		// bodyOffset := 0
-		// for _, col := range columns {
-		// 	switch {
-		// 	case col == 0:
-		// 		fmt.Fprintf(os.Stderr, "Value is a NULL.\n")
-		// 	case col == 1:
-		// 		fmt.Fprintf(os.Stderr, "Value is an 8-bit twos-complement integer. %v\n", body[bodyOffset:bodyOffset+1])
-		// 		bodyOffset++
-		// 	case col == 2:
-		// 		fmt.Fprintf(os.Stderr, "Value is an 8-bit twos-complement integer. %v\n", body[bodyOffset:bodyOffset+2])
-		// 		bodyOffset += 2
-		// 	case col == 3:
-		// 		fmt.Fprintf(os.Stderr, "Value is a big-endian 24-bit twos-complement integer. %v\n", body[bodyOffset:bodyOffset+3])
-		// 		bodyOffset += 3
-		// 	case col == 4:
-		// 		fmt.Fprintf(os.Stderr, "Value is a big-endian 32-bit twos-complement integer. %v\n", body[bodyOffset:bodyOffset+4])
-		// 		bodyOffset += 4
-		// 	case col == 5:
-		// 		fmt.Fprintf(os.Stderr, "Value is a big-endian 48-bit twos-complement integer. %v\n", body[bodyOffset:bodyOffset+6])
-		// 		bodyOffset += 6
-		// 	case col == 6:
-		// 		fmt.Fprintf(os.Stderr, "Value is a big-endian 64-bit twos-complement integer. %v\n", body[bodyOffset:bodyOffset+8])
-		// 		bodyOffset += 8
-		// 	case col == 7:
-		// 		fmt.Fprintf(os.Stderr, "Value is a big-endian IEEE 754-2008 64-bit floating point number. %v\n", body[bodyOffset:bodyOffset+8])
-		// 		bodyOffset += 8
-		// 	case col == 8:
-		// 		fmt.Fprintf(os.Stderr, "Value is the integer 0. (Only available for schema format 4 and higher.) %v\n", 0)
-		// 	case col == 9:
-		// 		fmt.Fprintf(os.Stderr, "Value is the integer 1. (Only available for schema format 4 and higher.) %v\n", 1)
-		// 	case (col >= 12 && col%2 == 0):
-		// 		length := (int(col) - 12) / 2
-		// 		fmt.Fprintf(os.Stderr, "Value is a BLOB that is (N-12)/2 bytes in length. '%s'\n", body[bodyOffset:bodyOffset+length])
-		// 		bodyOffset += length
-		// 	case (col >= 13 && col%2 == 1):
-		// 		length := (int(col) - 13) / 2
-		// 		fmt.Fprintf(os.Stderr, "Value is a string in the text encoding and (N-13)/2 bytes in length. The nul terminator is not stored. '%s'\n", body[bodyOffset:bodyOffset+length])
-		// 		bodyOffset += length
-		// 	}
-		// }
+		output := make([]string, 0)
+		for _, record := range records {
+			if record.Body.Payload[0] == "table" {
+				s, ok := record.Body.Payload[2].(string)
+				if ok && !strings.HasPrefix(s, "sqlite_") {
+					output = append(output, s)
+				}
+			}
+		}
+		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(output, " "))
 	default:
 		fmt.Println("Unknown command", command)
 		os.Exit(1)
