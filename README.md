@@ -4,10 +4,10 @@ This is my attempt on implementing the sqlite cli from scratch based on codecraf
 ["Build Your Own SQLite" Challenge](https://codecrafters.io/challenges/sqlite).
 
 Right now it supports the following dot commands:
-- **.dbinfo**
-   It correctly outputs the size of the database pages and the number of rows in
-   sample.db. However, it 
-- **.tables**
+- **.dbinfo**\
+   It outputs the size of the database pages and the number of rows in
+   sample.db.
+- **.tables**\
    Display all tables registered at `sqlite_schema`.
 
 ## Known limitations of this implementation
